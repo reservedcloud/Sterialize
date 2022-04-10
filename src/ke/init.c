@@ -19,11 +19,14 @@
 
 #include <kd/com.h>
 
+#include <i8042prt/mouse.h>
+
+
 VOID KiKernelThread(){
 
     DbgPrintFmt("sl!KiKernelThread: Hello!");   
     while(1){
-         
+          //DbgPrintFmt("sl!KiKernelThread: Cursor at: %d, %d", KiSystemCursor.X, KiSystemCursor.Y);
     }
 }
 
@@ -49,6 +52,9 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
 
     MmInitializePmm(KeTryAcquireTag(LoaderBlock, STIVALE2_STRUCT_TAG_MEMMAP_ID));
     VidDisplayString("Mm: Physical Memory Manager Initialized\n\r");
+
+    KeInitializeMouse();
+    VidDisplayString("Ke: (i8042) PS/2 Mouse Driver Initialized\n\r");
 
     KeInitializeKernelClock();
     VidDisplayString("Ke: Kernel Clock Initialized\n\r");
