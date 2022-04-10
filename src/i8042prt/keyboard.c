@@ -12,8 +12,7 @@ CONST UCHAR KbdAlphabetTwo[] = "asdfghjkl"; // 0x1E - 0x26
 CONST UCHAR KbdAlphabetThree[] = "yxcvbnm"; // 0x2C - 0x32
 CONST UCHAR KbdNumbers[] = "123456789"; // 0x2 - 0xA
 
-CHAR KbdLastCharacter = '\0';
-
+KSYSTEM_KEYBOARD KbdSystemKeyboard = {0};
 
 UCHAR
 i8042KbdRead();
@@ -34,7 +33,7 @@ i8042KbdHandle(
     if(Character == 0)
         return;
         
-    KbdLastCharacter = Character;
+    KbdSystemKeyboard.KbdLastCharacter = Character;
 }
 
 UCHAR

@@ -1,7 +1,11 @@
 #pragma once
 #include <ntdef.h>
 
-CHAR KbdLastCharacter;
-
 VOID
 KeInitializeKeyboard();
+
+typedef struct {
+    CHAR KbdLastCharacter;
+}KSYSTEM_KEYBOARD, *PKSYSTEM_KEYBOARD;
+
+KSYSTEM_KEYBOARD KbdSystemKeyboard;
