@@ -20,6 +20,7 @@
 #include <kd/com.h>
 
 #include <i8042prt/mouse.h>
+#include <i8042prt/keyboard.h>
 
 
 VOID KiKernelThread(){
@@ -55,6 +56,9 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
 
     KeInitializeMouse();
     VidDisplayString("Ke: (i8042) PS/2 Mouse Driver Initialized\n\r");
+
+    KeInitializeKeyboard();
+    VidDisplayString("Ke: (i8042) PS/2 Keyboard Driver Initialized\n\r");
 
     KeInitializeKernelClock();
     VidDisplayString("Ke: Kernel Clock Initialized\n\r");

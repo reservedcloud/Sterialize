@@ -21,7 +21,7 @@ UCHAR
 KiDisplayFont[ 4096 ];
 
 VOID
-KiDisplayChar(
+VidDisplayChar(
 	CHAR  cChararcter,
 	UINT  uiX,
 	UINT  uiY,

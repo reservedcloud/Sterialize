@@ -164,7 +164,7 @@ i8042MouUpdate(
 	struct InterruptRegisters *reg
 )
 {
-    DbgPrintFmt( "dawgging" );
+    //DbgPrintFmt( "dawgging" );
 
 	UCHAR ucData = IoInputByte( 0x60 );
 	i8042MouHandle( ucData );

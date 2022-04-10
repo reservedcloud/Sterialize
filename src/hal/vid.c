@@ -51,7 +51,7 @@ VOID VidDisplayString(PUCHAR String){
 			iX = VidDisplayX;
 		else if ( iX < VidScreenWidth )
 		{
-			KiDisplayChar(
+			VidDisplayChar(
 				String[ i ],
 				iX,
 				VidDisplayY,
@@ -77,7 +77,7 @@ VOID VidDisplayStringXY(PUCHAR String, ULONG Left, ULONG Top, BOOLEAN Transparen
       for (; *String; ++String, Left += 8)
       {
           /* Display a character */
-          KiDisplayChar(*String, Left, Top, VidTextColor);
+          VidDisplayChar(*String, Left, Top, VidTextColor);
       }
 }
 
@@ -110,7 +110,7 @@ VOID VidSolidColorFill(ULONG Left, ULONG Top, ULONG Right, ULONG Bottom, UINT Co
 }
 
 VOID
-KiDisplayChar(
+VidDisplayChar(
 	CHAR  cChararcter,
 	UINT  uiX,
 	UINT  uiY,
