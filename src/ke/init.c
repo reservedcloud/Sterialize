@@ -22,12 +22,15 @@
 #include <i8042prt/mouse.h>
 #include <i8042prt/keyboard.h>
 
+#include <ntuser/window.h>
 
-VOID KiKernelThread(){
+VOID KiKernelThread()
+{
 
-    DbgPrintFmt("sl!KiKernelThread: Hello!");   
-    while(1){
-          //DbgPrintFmt("sl!KiKernelThread: Cursor at: %d, %d", KiSystemCursor.X, KiSystemCursor.Y);
+    DbgPrintFmt("sl!KiKernelThread: Hello!");
+    while (1)
+    {
+        // DbgDbgPrintFmtmt("sl!KiKernelThread: Cursor at: %d, %d", KiSystemCursor.X, KiSystemCursor.Y);
     }
 }
 
@@ -40,7 +43,6 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
     VidSetTextColor(0xFFFFFFFF);
     VidSolidColorFill(0, 0, VidScreenWidth, VidScreenHeight, 0x00000000);
     VidDisplayString("Vid: Video Initialized\n\r");
-
 
     HalInitializeGDT();
     VidDisplayString("Hal: Global Descriptor Table Initialized\n\r");
@@ -63,15 +65,15 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
     KeInitializeKernelClock();
     VidDisplayString("Ke: Kernel Clock Initialized\n\r");
     KeQuerySystemTime(&CurrentTime);
-    sprintf(ClockText, "Ke: Current time is: %d:%d:%d\n\r", CurrentTime.Hours, CurrentTime.Minutes, CurrentTime.Seconds);
+    DbgPrintFmt(ClockText, "Ke: Current time is: %d:%d:%d\n\r", CurrentTime.Hours, CurrentTime.Minutes, CurrentTime.Seconds);
     VidDisplayString(ClockText);
 
     PsThreadsInit();
     VidDisplayString("Ps: Initialized Threads\n\r");
     PspCreateThread((LPTHREAD_START_ROUTINE)KiKernelThread);
 
-
+    WmInitialization();
     DbgPrintFmt("sl!KiSystemStartup: All done!");
-
-    for(;;);
+    for (;;)
+        ;
 }

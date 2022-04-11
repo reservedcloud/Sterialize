@@ -6,7 +6,7 @@ ULONG VidTextColor = NULL;
 ULONG VidDisplayX = 0;
 ULONG VidDisplayY = 0;
 
-ULONG64 VidFramebufferAddress = 0x0;
+ULONG64 VidFramebufferAddress;
 UINT VidScreenWidth = 0;
 UINT VidScreenHeight = 0;
 UINT VidScreenBpp = 0;
@@ -18,10 +18,10 @@ BOOLEAN VidInitialize(struct stivale2_struct_tag_framebuffer* VidFramebuffer){
     VidDisplayY = 0;
 
     VidFramebufferAddress = VidFramebuffer->framebuffer_addr;
-    VidScreenWidth = VidFramebuffer->framebuffer_width;
-    VidScreenHeight = VidFramebuffer->framebuffer_height;
-    VidScreenBpp = VidFramebuffer->framebuffer_bpp;
-    VidScreenPitch = VidFramebuffer->framebuffer_pitch;
+    VidScreenWidth = (INT)VidFramebuffer->framebuffer_width;
+    VidScreenHeight = (INT)VidFramebuffer->framebuffer_height;
+    VidScreenBpp = (INT)VidFramebuffer->framebuffer_bpp;
+    VidScreenPitch = (INT)VidFramebuffer->framebuffer_pitch;
 
     return TRUE;
 }

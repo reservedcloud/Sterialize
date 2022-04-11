@@ -4,6 +4,7 @@
 typedef struct{
     ULONG X;
     ULONG Y;
+    INT   State;
 }KSYSTEM_CURSOR, *PKSYSTEM_CURSOR;
 
 #define MOUSE_LEFT_CLICK 1

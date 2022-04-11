@@ -33,6 +33,7 @@ KiUpdateTick(
 	struct InterruptRegisters *reg
 )
 {
+	//memewm_refresh();
 	ulTick++;
 	PsScheduleThreads(reg);
 }
