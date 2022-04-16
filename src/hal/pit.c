@@ -33,9 +33,9 @@ KiUpdateTick(
 	struct InterruptRegisters *reg
 )
 {
-	WmUpdateScreen();
 	ulTick++;
 	PsScheduleThreads(reg);
+	WmUpdateScreen();
 }
 
 INT BaseFrequency = 1193180;

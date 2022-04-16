@@ -18,7 +18,9 @@ static void *balloc_aligned(size_t count, size_t alignment) {
 }
 
 void *malloc(size_t count) {
-    return balloc_aligned(count, 4);
+    void* addy = balloc_aligned(count, 4);
+    DbgPrintFmt("malloc: %p\n", addy);
+    return addy;
 }
 
 void free(void *ptr) {

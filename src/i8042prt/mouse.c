@@ -3,6 +3,7 @@
 #include <hal/vid.h>
 #include <hal/idt.h>
 #include <kd/com.h>
+#include <ntuser/wm.h>
 
 KSYSTEM_CURSOR KiSystemCursor = {0};
 UCHAR i8042MouPacket[4];
@@ -147,25 +148,37 @@ VOID i8042MouProcess(
 			KiSystemCursor.Y += 255;
 	}
 
-	if (KiSystemCursor.X < 0)
-		KiSystemCursor.X = 0;
+	if (KiSystemCursor.X < 1)
+		KiSystemCursor.X = 1;
+
 	if (KiSystemCursor.X > VidScreenWidth - 1)
 		KiSystemCursor.X = VidScreenWidth - 1;
 
-	if (KiSystemCursor.Y < 0)
-		KiSystemCursor.Y = 0;
+	if (KiSystemCursor.Y < 1)
+		KiSystemCursor.Y = 1;
+
 	if (KiSystemCursor.Y > VidScreenHeight - 1)
 		KiSystemCursor.Y = VidScreenHeight - 1;
 
+	////////
+
 	if (i8042MouPacket[0] & 0b00000001)
 		KiSystemCursor.State = MOUSE_LEFT_CLICK;
+
+	else
 	if (i8042MouPacket[0] & 0b00000100)
 		KiSystemCursor.State = MOUSE_MIDDLE_CLICK;
+
+	else 
 	if (i8042MouPacket[0] & 0b00000010)
 		KiSystemCursor.State = MOUSE_RIGHT_CLICK;
 
-	KiSystemCursor.State = NULL;
+	else KiSystemCursor.State = NULL;
+	
 	i8042MouPacketReady = FALSE;
+
+	NtSetCursorPos(KiSystemCursor.X, KiSystemCursor.Y);
+	WmNeedsUpdate = 1;
 }
 
 VOID i8042MouUpdate(

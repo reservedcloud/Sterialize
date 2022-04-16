@@ -2,8 +2,8 @@
 #include <ntdef.h>
 
 typedef struct{
-    ULONG X;
-    ULONG Y;
+    INT   X;
+    INT   Y;
     INT   State;
 }KSYSTEM_CURSOR, *PKSYSTEM_CURSOR;
 

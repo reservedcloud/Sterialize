@@ -52,4 +52,4 @@ $(KERNEL): $(OBJ)
 
 clean:
 	rm -rf $(OBJ)
-	rm sterialkrnl.sys
+	#rm sterialkrnl.sys

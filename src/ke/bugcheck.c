@@ -4,6 +4,7 @@
 #include <ke/i386.h>
 #include <ke/mutex.h>
 #include <kd/com.h>
+#include <hal/idt.h>
 
 DEFINE_LOCK(BugCheckMutex);
 
@@ -38,6 +39,7 @@ VOID KeBugCheck2(
 		BugCheckParameter4 );
     
     DbgPrintFmt(StopCode);
+    DbgPrintFmt("Translated: %s at %08lx",exception_messages[ BugCheckCode ], BugCheckParameter2);
     VidSetTextColor(0xFFFFFFFF);
     VidDisplayString(StopCode);
 

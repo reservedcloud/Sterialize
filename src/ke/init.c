@@ -29,8 +29,8 @@ VOID KiKernelThread()
 
     DbgPrintFmt("sl!KiKernelThread: Hello!");
     while (1)
-    {WmUpdateScreen();
-         DbgPrintFmt("sl!KiKernelThread: Cursor at: %d, %d", KiSystemCursor.X, KiSystemCursor.Y);
+    {    
+         DbgPrintFmt("sl!KiKernelThread: Cursor at: %d, %d with state: %d", KiSystemCursor.X, KiSystemCursor.Y, KiSystemCursor.State);
     }
 }
 
@@ -70,10 +70,12 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
 
     PsThreadsInit();
     VidDisplayString("Ps: Initialized Threads\n\r");
-    PspCreateThread((LPTHREAD_START_ROUTINE)KiKernelThread);
+    //PspCreateThread((LPTHREAD_START_ROUTINE)KiKernelThread);
 
     WmInitialize();
     VidDisplayString("Wm: Initialized Window Manager\n\r");
+
+   
     
     DbgPrintFmt("sl!KiSystemStartup: All done!");
     for (;;)
