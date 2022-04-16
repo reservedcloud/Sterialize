@@ -33,7 +33,7 @@ KiUpdateTick(
 	struct InterruptRegisters *reg
 )
 {
-	//memewm_refresh();
+	WmUpdateScreen();
 	ulTick++;
 	PsScheduleThreads(reg);
 }

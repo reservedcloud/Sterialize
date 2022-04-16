@@ -22,15 +22,15 @@
 #include <i8042prt/mouse.h>
 #include <i8042prt/keyboard.h>
 
-#include <ntuser/window.h>
+#include <ntuser/wm.h>
 
 VOID KiKernelThread()
 {
 
     DbgPrintFmt("sl!KiKernelThread: Hello!");
     while (1)
-    {
-        // DbgDbgPrintFmtmt("sl!KiKernelThread: Cursor at: %d, %d", KiSystemCursor.X, KiSystemCursor.Y);
+    {WmUpdateScreen();
+         DbgPrintFmt("sl!KiKernelThread: Cursor at: %d, %d", KiSystemCursor.X, KiSystemCursor.Y);
     }
 }
 
@@ -53,8 +53,8 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
     HalInitializePIT();
     VidDisplayString("Hal: Programmable Interval Timer Initialized\n\r");
 
-    MmInitializePmm(KeTryAcquireTag(LoaderBlock, STIVALE2_STRUCT_TAG_MEMMAP_ID));
-    VidDisplayString("Mm: Physical Memory Manager Initialized\n\r");
+    // MmInitializePmm(KeTryAcquireTag(LoaderBlock, STIVALE2_STRUCT_TAG_MEMMAP_ID));
+    // VidDisplayString("Mm: Physical Memory Manager Initialized\n\r");
 
     KeInitializeMouse();
     VidDisplayString("Ke: (i8042) PS/2 Mouse Driver Initialized\n\r");
@@ -72,7 +72,9 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
     VidDisplayString("Ps: Initialized Threads\n\r");
     PspCreateThread((LPTHREAD_START_ROUTINE)KiKernelThread);
 
-    WmInitialization();
+    WmInitialize();
+    VidDisplayString("Wm: Initialized Window Manager\n\r");
+    
     DbgPrintFmt("sl!KiSystemStartup: All done!");
     for (;;)
         ;
