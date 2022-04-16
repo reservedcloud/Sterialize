@@ -160,6 +160,7 @@ VOID i8042MouProcess(
 	if (KiSystemCursor.Y > VidScreenHeight - 1)
 		KiSystemCursor.Y = VidScreenHeight - 1;
 
+	
 	////////
 
 	if (i8042MouPacket[0] & 0b00000001)
@@ -174,10 +175,14 @@ VOID i8042MouProcess(
 		KiSystemCursor.State = MOUSE_RIGHT_CLICK;
 
 	else KiSystemCursor.State = NULL;
+
 	
+	WmHandleWindows();
 	i8042MouPacketReady = FALSE;
 
+	
 	NtSetCursorPos(KiSystemCursor.X, KiSystemCursor.Y);
+	
 	WmNeedsUpdate = 1;
 }
 

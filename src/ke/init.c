@@ -78,6 +78,8 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
    
     
     DbgPrintFmt("sl!KiSystemStartup: All done!");
+
+    
     for (;;)
         ;
 }

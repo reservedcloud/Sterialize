@@ -17,13 +17,6 @@ typedef struct {
 VOID WmUpdateCursor();
 extern BOOLEAN WmNeedsUpdate;
 
-typedef struct window_t {
-    int id;
-    char *title;
-    int x;
-    int y;
-    int x_size;
-    int y_size;
-    uint32_t *framebuffer;
-    struct window_t *next;
-} window_t;
+
+
+VOID WmHandleWindows();
