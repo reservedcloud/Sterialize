@@ -2,6 +2,7 @@
 
 
 //stolen from mint's memewm
+
 static size_t bump_allocator_base = 0x1000000;
 
 
