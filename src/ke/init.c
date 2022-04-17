@@ -24,13 +24,37 @@
 
 #include <ntuser/wm.h>
 
+#include <hal/pit.h>
+
+#include <io/io.h>
+
+VOID Shutdown(){
+    IoOutputWord(0x604, 0x2000);
+}
+
+VOID StartMenu(){
+    INT WinIDStartMenu = WmCreateWindow("Start Menu", 1, VidScreenHeight - 26 /*taskbar pops*/ - 345, 200, 345, 1, -1, (ULONG64 *)-1);
+    INT WinIDButtonShutdown = WmCreateWindow("Shutdown", 4, 60, 120, 50, 4, WinIDStartMenu, (ULONG64 *)Shutdown);
+}
+
+
 VOID KiKernelThread()
 {
+    
 
-    DbgPrintFmt("sl!KiKernelThread: Hello!");
+    UCHAR ClockText[512];
+    KSYSTEM_TIME CurrentTime;
+
+    INT WinIDTaskbar = WmCreateWindow("taskbar_1221s", 0, VidScreenHeight - 26, VidScreenWidth, VidScreenHeight, 2, -1, (ULONG64 *)-1);
+    INT WinIDClockTaskbar = WmCreateWindow("clock_taskbar", VidScreenWidth - 63 - 10, 5, NULL, NULL, 3, WinIDTaskbar, (ULONG64 *)-1); // label
+    INT WinIDButtonTaskbar = WmCreateWindow("Start", 4, 4, 44, 20, 4, WinIDTaskbar, (ULONG64 *)StartMenu);
     while (1)
-    {    
-         DbgPrintFmt("sl!KiKernelThread: Cursor at: %d, %d with state: %d", KiSystemCursor.X, KiSystemCursor.Y, KiSystemCursor.State);
+    {
+        KeQuerySystemTime(&CurrentTime); // continously update
+        sprintf(ClockText, "%d:%d:%d", CurrentTime.Hours, CurrentTime.Minutes, CurrentTime.Seconds);
+        WmEditWindowText(WinIDClockTaskbar, ClockText);
+
+        // DbgPrintFmt("sl!KiKernelThread: Cursor at: %d, %d with state: %d", KiSystemCursor.X, KiSystemCursor.Y, KiSystemCursor.State);
     }
 }
 
@@ -70,16 +94,13 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
 
     PsThreadsInit();
     VidDisplayString("Ps: Initialized Threads\n\r");
-    //PspCreateThread((LPTHREAD_START_ROUTINE)KiKernelThread);
+    PspCreateThread((LPTHREAD_START_ROUTINE)KiKernelThread);
 
     WmInitialize();
     VidDisplayString("Wm: Initialized Window Manager\n\r");
 
-   
-    
     DbgPrintFmt("sl!KiSystemStartup: All done!");
 
-    
     for (;;)
         ;
 }

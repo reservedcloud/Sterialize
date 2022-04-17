@@ -10,14 +10,15 @@ ULONG64 ulTick = 0;
 
 VOID
 Sleep(
-	LONG Seconds
+	LONG Milliseconds
 )
 {
-	UINT lTick;
-	lTick = ulTick + ( Seconds * 100 );
-
+	ULONG64 lTick;
+	lTick = ulTick + ( Milliseconds );
+	
+	
 	while ( ulTick < lTick )
-		;
+		ulTick++ ;
 }
 
 ULONG64
