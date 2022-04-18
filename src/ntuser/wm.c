@@ -28,6 +28,7 @@ typedef struct
     BOOLEAN Focused;
     INT FormType;
     INT ParentID;
+    UINT HexColor;
     ULONG64* ActionAddress;
 } KSYSTEM_WINDOW;
 
@@ -58,21 +59,25 @@ VOID WmDisplayChar(
     }
 }
 
-VOID WmDisplayStringXY(PUCHAR String, ULONG Left, ULONG Top, BOOLEAN Transparent)
+VOID WmDisplayStringXY(PUCHAR String, ULONG Left, ULONG Top, UINT Color)
 {
     ULONG BackColor;
-
+    ULONG OrigLeft = Left;
     /*
      * If the caller wanted transparent, then send the special value (16),
      * else use our default and call the helper routine.
      */
-    BackColor = Transparent ? 0x00000000 : 0xffffffff;
+    
 
     /* Loop every character and adjust the position */
     for (; *String; ++String, Left += 8)
     {
         /* Display a character */
-        WmDisplayChar(*String, Left, Top, BackColor);
+        if(*String == '\n'){
+            Left = OrigLeft;
+            Top += 16;
+        }
+        WmDisplayChar(*String, Left, Top, Color);
     }
 }
 
@@ -123,15 +128,25 @@ VOID WmPixelFillColor(INT X, INT Y, INT EndX, INT EndY, UINT COLOR)
     }
 }
 
-INT WmCreateWindow(CHAR *Title, INT X, INT Y, INT XSize, INT YSize, INT FormType, INT ParentID, ULONG64* Action)
+INT WmCreateWindow(CHAR *Title, INT X, INT Y, INT XSize, INT YSize, INT FormType, INT ParentID, UINT HexColor, ULONG64* Action)
 {
     if (memewm_current_window == MAX_WINDOWS)
         return;
 
+    INT backup_memewm_current_window = memewm_current_window;
+    for(int i = 0; i< memewm_current_window; i++){ //check for any available window
+        if(Windows[i].FormType == 0){
+            memewm_current_window = i;
+            break;
+        }
+
+    }
+    /////////
     Windows[memewm_current_window].X = X;
     Windows[memewm_current_window].Y = Y;
     Windows[memewm_current_window].XSize = XSize;
     Windows[memewm_current_window].YSize = YSize;
+    Windows[memewm_current_window].HexColor = HexColor;
 
     Windows[memewm_current_window].FormType = FormType;
     Windows[memewm_current_window].ParentID = ParentID;
@@ -157,9 +172,20 @@ INT WmCreateWindow(CHAR *Title, INT X, INT Y, INT XSize, INT YSize, INT FormType
 
     Windows[memewm_current_window].Focused = 1;
 
-    memewm_current_window++;
+    if(backup_memewm_current_window == memewm_current_window){
+        memewm_current_window++;
 
-    return memewm_current_window - 1;
+        DbgPrintFmt("Generated window : (id)%d\n", memewm_current_window - 1);
+        return memewm_current_window - 1;
+    }
+    else{
+        INT returnVar = memewm_current_window;
+        memewm_current_window = backup_memewm_current_window;//revert
+
+        DbgPrintFmt("Found old slot : (id)%d\n", returnVar);
+        return returnVar;
+    }
+    
 }
 
 VOID WmInitialize()
@@ -176,7 +202,7 @@ VOID WmInitialize()
     WmNeedsUpdate = 1;
 }
 
-#define TITLE_BAR_THICKNESS 22
+#define TITLE_BAR_THICKNESS 18
 
 VOID WmSetWindowPosCursorBased(INT X, INT Y, INT ID)
 {
@@ -241,7 +267,7 @@ VOID WmHandleWindows()
 
             if (Windows[i].FormType == 1)
             {
-                if ((KiCursorPosX > WindowX && KiCursorPosX < WindowWidth) &&
+                if ((KiCursorPosX > WindowX && KiCursorPosX < WindowWidth /*close button calculation*/ - 6 - 16 ) &&
                     (KiCursorPosY > WindowY && KiCursorPosY < WindowY + TITLE_BAR_THICKNESS))
                 {
                     if (i != WindowDraggedID && WindowDraggedID != -1)
@@ -251,6 +277,13 @@ VOID WmHandleWindows()
                     WindowDraggedID = i;
                     WmSetWindowPosCursorBased(KiSystemCursor.X - KiCursorPosX, KiSystemCursor.Y - KiCursorPosY, i);
                 }
+                //terminate window
+                 if ((KiCursorPosX > WindowWidth /*close button calculation*/ - 6 - 16 &&
+                    KiCursorPosX < WindowWidth /*close button calculation*/ - 6 ) &&
+                    (KiCursorPosY > WindowY && KiCursorPosY < WindowY + TITLE_BAR_THICKNESS))
+                    {
+                        WmDestroyWindow(i);
+                    }
                 // else if((KiCursorPosX > WindowX && KiCursorPosX < WindowWidth) &&
                 // (KiCursorPosY > WindowY + TITLE_BAR_THICKNESS && KiCursorPosY < WindowHeight) && !Windows[i].Focused)
                 //    break;
@@ -266,6 +299,9 @@ VOID WmHandleWindows()
 
 VOID WmEditWindowText(INT WinID, CHAR *NewText)
 {
+    if( Windows[WinID].FormType == 0) //check for invalid window
+        return;
+
     Windows[WinID].Title = NewText;
     WmNeedsUpdate = 1;
 }
@@ -274,15 +310,21 @@ INT WmGetWindowIDByName(CHAR *Title)
 {
     for (int i = 0; i < memewm_current_window; i++)
     {
-        if (Windows[i].Title == Title)
-            return i;
-        else
-            -1;
+        if( Windows[i].FormType != 0) //check for invalid window
+        {
+            if (Windows[i].Title == Title){
+                return i;
+            }
+        }
     }
+    return -1;
 }
 
 VOID WmDrawLabels(INT WinID, INT X, INT Y, INT ParentID)
 {
+    if(IsWindowDragged && Windows[WinID].ParentID == WindowDraggedID)
+        return;
+
     INT MainWindowX = Windows[ParentID].X;
     INT MainWindowY = Windows[ParentID].Y;
 
@@ -295,9 +337,11 @@ VOID WmDrawLabels(INT WinID, INT X, INT Y, INT ParentID)
 
     if (Windows[WinID].FormType == 3) // label type
     {
-        WmDisplayStringXY(Windows[WinID].Title, MainWindowX + ItemWindowX, MainWindowY + ItemWindowY, TRUE);
+        WmDisplayStringXY(Windows[WinID].Title, MainWindowX + ItemWindowX, MainWindowY + ItemWindowY, Windows[WinID].HexColor);
     }
 }
+
+//VOID WmDraw
 
 VOID WmDrawButtons(INT WinID, INT X, INT Y, INT Width, INT Height, INT ParentID)
 {   
@@ -341,7 +385,7 @@ VOID WmDrawButtons(INT WinID, INT X, INT Y, INT Width, INT Height, INT ParentID)
             WmPixelFillColor(ActualX + 1, ActualY + 1, ActualWidth - 1, ActualHeight - 1, 0xDFDFDF);
             WmPixelFillColor(ActualX + 1, ActualY + 1, ActualWidth - 2, ActualHeight - 2, 0x000000);
             WmPixelFillColor(ActualX + 2, ActualY + 2, ActualWidth - 2, ActualHeight - 2, 0xC0C0C0);
-            WmDisplayStringXY(Windows[WinID].Title, iMiddleX + 2, iMiddleY - 10, TRUE);
+            WmDisplayStringXY(Windows[WinID].Title, iMiddleX + 2, iMiddleY - 10, 0x00000000);
         }
         else
         {
@@ -350,10 +394,73 @@ VOID WmDrawButtons(INT WinID, INT X, INT Y, INT Width, INT Height, INT ParentID)
             WmPixelFillColor(ActualX + 1, ActualY + 1, ActualWidth - 1, ActualHeight - 1, 0x808080);
             WmPixelFillColor(ActualX + 1, ActualY + 1, ActualWidth - 2, ActualHeight - 2, 0xFFFFFF);
             WmPixelFillColor(ActualX + 2, ActualY + 2, ActualWidth - 2, ActualHeight - 2, 0xC0C0C0);
-            WmDisplayStringXY(Windows[WinID].Title, iMiddleX, iMiddleY - 10, TRUE);
+            WmDisplayStringXY(Windows[WinID].Title, iMiddleX, iMiddleY - 10, 0x00000000);
 
 
         }
+    }
+}
+
+BOOLEAN WmIsWindowOpenedByName(CHAR* Title){
+    INT WinID = WmGetWindowIDByName(Title);
+
+    if(WinID == -1)
+        return FALSE;
+
+    return TRUE;
+}
+
+VOID WmBasicWindows(int WinID, int WindowX, int WindowY, int WindowWidth, int WindowHeight, int Focused){
+    WmPixelFillColor(WindowX, WindowY, WindowWidth, WindowHeight, 0x000000);
+    WmPixelFillColor(WindowX, WindowY, WindowWidth - 1, WindowHeight - 1, 0xDFDFDF);
+    WmPixelFillColor(WindowX + 1, WindowY + 1, WindowWidth - 1, WindowHeight - 1, 0x808080);
+    WmPixelFillColor(WindowX + 1, WindowY + 1, WindowWidth - 2, WindowHeight - 2, 0xFFFFFF);
+    WmPixelFillColor(WindowX + 2, WindowY + 2, WindowWidth - 2, WindowHeight - 2, 0xC0C0C0);
+    // TitlebAr
+    WmPixelFillColor(WindowX + 4, WindowY + 4, WindowWidth - 4, WindowY + 4 + TITLE_BAR_THICKNESS, Focused ? 0x0000AA : 0x868A8E);
+    WmDisplayStringXY(Windows[WinID].Title, WindowX + 6, WindowY + 4, 0xffffffff);
+
+    //Close Button
+    INT DefaultCloseWidthHeightPrefix = 6;
+
+    INT CloseX = WindowWidth - DefaultCloseWidthHeightPrefix - 16;
+    INT CloseWidth = WindowWidth - DefaultCloseWidthHeightPrefix;
+
+    INT CloseY = WindowY + DefaultCloseWidthHeightPrefix;
+    INT CloseHeight = WindowY + DefaultCloseWidthHeightPrefix + 14;
+    WmPixelFillColor(CloseX, CloseY, CloseWidth, CloseHeight, 0x000000);
+    WmPixelFillColor(CloseX, CloseY, CloseWidth - 1, CloseHeight - 1, 0xDFDFDF);
+    WmPixelFillColor(CloseX + 1, CloseY + 1, CloseWidth - 1, CloseHeight - 1, 0x808080);
+    WmPixelFillColor(CloseX + 1, CloseY + 1, CloseWidth - 2, CloseHeight - 2, 0xFFFFFF);
+    WmPixelFillColor(CloseX + 2, CloseY + 2, CloseWidth - 2, CloseHeight - 2, 0xC0C0C0);
+
+    WmDisplayStringXY("x", CloseX + 4, CloseY - 3, 0x00000000);
+}
+
+VOID WmDrawPanels(INT WinID, INT X, INT Y, INT Width, INT Height, INT ParentID, UINT Color){
+    if(IsWindowDragged && Windows[WinID].ParentID == WindowDraggedID)
+        return;
+
+    INT MainWindowX = Windows[ParentID].X;
+    INT MainWindowY = Windows[ParentID].Y;
+
+    INT MainWindowWidth = Windows[ParentID].XSize + MainWindowX;
+    INT MainWindowHeight = Windows[ParentID].YSize + MainWindowY;
+
+    INT ItemWindowX = X;
+    INT ItemWindowY = Y;
+    //////////
+    INT ActualX = MainWindowX + ItemWindowX;
+    INT ActualY = MainWindowY + ItemWindowY;
+
+    INT ActualWidth = ActualX + Width;
+    INT ActualHeight = ActualY + Height;
+
+    if (Windows[WinID].FormType == 5)
+    { // panels
+
+        WmPixelFillColor(ActualX, ActualY, ActualWidth, ActualHeight, Color);
+
     }
 }
 
@@ -367,34 +474,20 @@ VOID WmDrawWindows(int WinID, int WindowX, int WindowY, int WindowWidth, int Win
 
             if (WindowDraggedID != WinID)
             {
-                WmPixelFillColor(WindowX, WindowY, WindowWidth, WindowHeight, 0x000000);
-                WmPixelFillColor(WindowX, WindowY, WindowWidth - 1, WindowHeight - 1, 0xDFDFDF);
-                WmPixelFillColor(WindowX + 1, WindowY + 1, WindowWidth - 1, WindowHeight - 1, 0x808080);
-                WmPixelFillColor(WindowX + 1, WindowY + 1, WindowWidth - 2, WindowHeight - 2, 0xFFFFFF);
-                WmPixelFillColor(WindowX + 2, WindowY + 2, WindowWidth - 2, WindowHeight - 2, 0xC0C0C0);
-                // TitlebAr
-                WmPixelFillColor(WindowX + 3, WindowY + 3, WindowWidth - 3, WindowY + TITLE_BAR_THICKNESS - 1, Focused ? 0x000080 : 0x818181);
-                WmDisplayStringXY(Windows[WinID].Title, WindowX + 6, WindowY + 3, FALSE);
+                WmBasicWindows(WinID, WindowX, WindowY, WindowWidth, WindowHeight, Focused);
             }
             else
             {
-                WmPixelFillColor(WindowX + 2, WindowY, WindowWidth - 2, WindowY + 2, INVERTED_BLT);           // top
-                WmPixelFillColor(WindowX + 2, WindowHeight - 2, WindowWidth - 2, WindowHeight, INVERTED_BLT); // bottom
+                WmPixelFillColor(WindowX + 1, WindowY, WindowWidth - 1, WindowY + 1, INVERTED_BLT);           // top
+                WmPixelFillColor(WindowX + 1, WindowHeight - 1, WindowWidth - 1, WindowHeight, INVERTED_BLT); // bottom
 
-                WmPixelFillColor(WindowX, WindowY, WindowX + 2, WindowHeight, INVERTED_BLT);         // left line
-                WmPixelFillColor(WindowWidth - 2, WindowY, WindowWidth, WindowHeight, INVERTED_BLT); // right line
+                WmPixelFillColor(WindowX, WindowY, WindowX + 1, WindowHeight, INVERTED_BLT);         // left line
+                WmPixelFillColor(WindowWidth - 1, WindowY, WindowWidth, WindowHeight, INVERTED_BLT); // right line
             }
         }
         else
         {
-            WmPixelFillColor(WindowX, WindowY, WindowWidth, WindowHeight, 0x000000);
-            WmPixelFillColor(WindowX, WindowY, WindowWidth - 1, WindowHeight - 1, 0xDFDFDF);
-            WmPixelFillColor(WindowX + 1, WindowY + 1, WindowWidth - 1, WindowHeight - 1, 0x808080);
-            WmPixelFillColor(WindowX + 1, WindowY + 1, WindowWidth - 2, WindowHeight - 2, 0xFFFFFF);
-            WmPixelFillColor(WindowX + 2, WindowY + 2, WindowWidth - 2, WindowHeight - 2, 0xC0C0C0);
-            // TitlebAr
-            WmPixelFillColor(WindowX + 3, WindowY + 3, WindowWidth - 3, WindowY + TITLE_BAR_THICKNESS - 1, Focused ? 0x000080 : 0x818181);
-            WmDisplayStringXY(Windows[WinID].Title, WindowX + 6, WindowY + 3, FALSE);
+            WmBasicWindows(WinID, WindowX, WindowY, WindowWidth, WindowHeight, Focused);
         }
     }
     else if (Windows[WinID].FormType == 2) // formtype 2 - borderless
@@ -403,8 +496,30 @@ VOID WmDrawWindows(int WinID, int WindowX, int WindowY, int WindowWidth, int Win
         WmPixelFillColor(WindowX, WindowY, WindowWidth - 1, WindowHeight - 1, 0xDFDFDF);
         WmPixelFillColor(WindowX + 1, WindowY + 1, WindowWidth - 1, WindowHeight - 1, 0x808080);
         WmPixelFillColor(WindowX + 1, WindowY + 1, WindowWidth - 2, WindowHeight - 2, 0xDFDFDF);
-        WmPixelFillColor(WindowX + 2, WindowY + 2, WindowWidth - 2, WindowHeight - 2, 0xC0C0C0);
+        WmPixelFillColor(WindowX + 2, WindowY + 2, WindowWidth - 2, WindowHeight - 2, 0xC3C7CB);
     }
+}
+
+VOID WmDestroyWindow(INT WinID){
+ DbgPrintFmt("Destroyed main window : (id)%d\n", WinID);
+        //check for existing windows
+        if(Windows[WinID].FormType != 0)//if there is no form type (type = 0) == not existing window
+        {
+            Windows[WinID].FormType = 0;//deintialize
+            
+
+            //remove elements inside the window, as like buttons, labels
+            for(int i =0; i < memewm_current_window; i++ ){//get all elements
+                if(Windows[i].FormType != 1 && Windows[i].FormType != 2){ //check if the shit aint a window or a
+                                                                          //borderless window
+                    if(Windows[i].ParentID == WinID){
+                        DbgPrintFmt("Destroyed element window : (id)%d\n", i);
+                        Windows[i].FormType =0; //deintialize
+                   
+                    }
+                }
+            }
+        }
 }
 
 VOID WmUpdateScreen()
@@ -415,7 +530,7 @@ VOID WmUpdateScreen()
     WmNeedsUpdate = 0;
 
     for (int i = 0; i < KiFramebufferSize; i++)
-        KiAntiFramebuffer[i] = 0x3A6EA5;
+        KiAntiFramebuffer[i] = 0x55AAAA;
 
     // windows
     for (int i = 0; i < memewm_current_window; i++)
@@ -438,6 +553,7 @@ VOID WmUpdateScreen()
         WmDrawWindows(i, WindowX, WindowY, WindowWidth, WindowHeight, Focused);
         WmDrawLabels(i, WindowX, WindowY, Windows[i].ParentID);
         WmDrawButtons(i, WindowX, WindowY, WindowXSize, WindowYSize, Windows[i].ParentID);
+        WmDrawPanels(i,WindowX, WindowY, WindowXSize, WindowYSize, Windows[i].ParentID, Windows[i].HexColor );
         // HOLY SHIT THIS TAKES A LOT OF RAM
         //  DbgPrintFmt("FramebufferWindow: %p, KiFramebufferAddress: %p, KiAntiFramebuffer: %p\n",FramebufferWindow,KiFramebufferAddress, KiAntiFramebuffer );
         //  DbgPrintFmt("WindowX: %d, WindowY: %d, WindowXSize: %d, WindowYSize: %d, WindowWidth: %d, WindowHeight: %d, WindowEndX: %d, WindowEndY: %d\n",WindowX,WindowY, WindowXSize, WindowYSize, WindowWidth, WindowHeight, WindowEndX, WindowEndY );

@@ -28,26 +28,51 @@
 
 #include <io/io.h>
 
-VOID Shutdown(){
-    IoOutputWord(0x604, 0x2000);
+VOID DestroyWindowTest(){
+    WmDestroyWindow(WmGetWindowIDByName("Start Menu"));
 }
 
 VOID StartMenu(){
-    INT WinIDStartMenu = WmCreateWindow("Start Menu", 1, VidScreenHeight - 26 /*taskbar pops*/ - 345, 200, 345, 1, -1, (ULONG64 *)-1);
-    INT WinIDButtonShutdown = WmCreateWindow("Shutdown", 4, 60, 120, 50, 4, WinIDStartMenu, (ULONG64 *)Shutdown);
+    if(WmIsWindowOpenedByName("Start Menu")){
+        WmDestroyWindow(WmGetWindowIDByName("Start Menu"));
+        return;
+    }
+        
+
+    
+    INT WinIDStartMenu = WmCreateWindow("Start Menu", WIN_TYPE_BORDERLESS_WINDOW, VidScreenHeight - (27-4) /*taskbar pops*/ - 278, 177, 278, 2, -1, 0x0, (ULONG64 *)-1);
+    
+    INT WinIDButtonShutdown = WmCreateWindow("Shut Down...", 26, 240, 148, 34, WIN_TYPE_BUTTON, WinIDStartMenu, 0x0, (ULONG64 *)DestroyWindowTest);
+    
+    WmCreateWindow("panel1", 4, 4, 21, 272 - 2, WIN_TYPE_PANEL, WinIDStartMenu, 0x0000A4, (ULONG64 *)-1);
+    WmCreateWindow("\nS\nt\ne\nr\ni\na\nl\ni\nz\ne", 3, 272 - 2 - /*calculate text*/(11 * 16), 0, 0, WIN_TYPE_LABEL, WinIDStartMenu, 0xFFFFFFFF, (ULONG64 *)-1);
 }
 
+INT initThread = FALSE;
+VOID KiKernelThread2()
+{
+    initThread++;
+    while(1){
+
+    }
+}
 
 VOID KiKernelThread()
 {
     
+    INT WinIDHelloWorld = 
+        WmCreateWindow("Hello World", 60, 60, 400, 250, WIN_TYPE_WINDOW, -1, 0x0, (ULONG64 *)-1);
+
+        WmCreateWindow("Hello World Label", 30, 30, NULL, NULL, WIN_TYPE_LABEL, WinIDHelloWorld, 0xff000000, (ULONG64 *)-1);
+        WmCreateWindow("Hello World Button", 50, 40, 165, 50, WIN_TYPE_BUTTON, WinIDHelloWorld, NULL, (ULONG64 *)-1);
+        WmCreateWindow("Hello World Panel", 90, 120, 20, 30, WIN_TYPE_PANEL, WinIDHelloWorld, 0x0000ff, (ULONG64 *)-1);
 
     UCHAR ClockText[512];
     KSYSTEM_TIME CurrentTime;
 
-    INT WinIDTaskbar = WmCreateWindow("taskbar_1221s", 0, VidScreenHeight - 26, VidScreenWidth, VidScreenHeight, 2, -1, (ULONG64 *)-1);
-    INT WinIDClockTaskbar = WmCreateWindow("clock_taskbar", VidScreenWidth - 63 - 10, 5, NULL, NULL, 3, WinIDTaskbar, (ULONG64 *)-1); // label
-    INT WinIDButtonTaskbar = WmCreateWindow("Start", 4, 4, 44, 20, 4, WinIDTaskbar, (ULONG64 *)StartMenu);
+    INT WinIDTaskbar = WmCreateWindow("taskbar_1221s", -2, VidScreenHeight - 28, VidScreenWidth + 4, 30, WIN_TYPE_BORDERLESS_WINDOW, -1, 0x0, (ULONG64 *)-1);
+    INT WinIDClockTaskbar = WmCreateWindow("clock_taskbar", VidScreenWidth - 63 - 10, 5, NULL, NULL, WIN_TYPE_LABEL, WinIDTaskbar, 0x0, (ULONG64 *)-1); // label
+    INT WinIDButtonTaskbar = WmCreateWindow("Start", 4, 4, 55, 22, WIN_TYPE_BUTTON, WinIDTaskbar, 0x0, (ULONG64 *)StartMenu);
     while (1)
     {
         KeQuerySystemTime(&CurrentTime); // continously update
@@ -95,6 +120,7 @@ VOID KiSystemStartup(struct stivale2_struct *LoaderBlock)
     PsThreadsInit();
     VidDisplayString("Ps: Initialized Threads\n\r");
     PspCreateThread((LPTHREAD_START_ROUTINE)KiKernelThread);
+    
 
     WmInitialize();
     VidDisplayString("Wm: Initialized Window Manager\n\r");

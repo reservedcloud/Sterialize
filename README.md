@@ -15,3 +15,5 @@ Goal: finish the os.
 + I/O Driver
 + Real Time Clock
 + Preemptive Multitasking
+
+![Showcase](https://raw.githubusercontent.com/noobes-inc/Sterialize/master/vmware_kBOyvWrMaM.gif)
