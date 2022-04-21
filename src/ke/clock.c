@@ -1,6 +1,12 @@
 #include <ke/clock.h>
 #include <io/io.h>
 
+#include <hal/idt.h>
+
+#include <kd/com.h>
+
+#include <ke/i386.h>
+
 KSYSTEM_TIME KiGlobalTime = { 0 };
 
 UCHAR
@@ -34,7 +40,7 @@ KiGetRTCData(
 
 STATIC VOID
 KiUpdateClock( 
-
+	struct InterruptRegisters* regs
 )
 {
 	KiGlobalTime.Seconds = KiGetRTCData( RTC_SECONDS );
@@ -43,6 +49,12 @@ KiUpdateClock(
 	KiGlobalTime.Days	 = KiGetRTCData( RTC_DAYS );
 	KiGlobalTime.Months  = KiGetRTCData( RTC_MONTHS );
 	KiGlobalTime.Years	 = KiGetRTCData( RTC_YEARS );
+
+	//"Yes.. we got the interrupt, please send more"
+	IoOutputByte( 0x70, 0x0C );
+	IoInputByte( 0x71 );
+
+	IoOutputByte( PIC1, PIC_EOI );
 }
 
 VOID
@@ -50,7 +62,6 @@ KeQuerySystemTime(
 	PKSYSTEM_TIME ClockTime
 )
 {
-	KiUpdateClock( );
 	*ClockTime = KiGlobalTime;
 }
 
@@ -59,5 +70,17 @@ KeInitializeKernelClock(
 
 )
 {
-	KiUpdateClock( );
+	HalRegisterInterrupt(
+	  IRQ8,
+	  KiUpdateClock );
+
+	//Turn on our irq
+	KeDisableInterrupts( );
+
+	IoOutputByte( 0x70, 0x8B );
+	CHAR prev = IoInputByte( 0x71 );
+	IoOutputByte( 0x70, 0x8B );
+	IoOutputByte( 0x71, prev | 0x40 );
+
+	KeEnableInterrupts( );
 }

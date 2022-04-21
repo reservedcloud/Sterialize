@@ -3,7 +3,7 @@
 #include <hal/vid.h>
 #include <hal/idt.h>
 #include <kd/com.h>
-#include <ntuser/wm.h>
+
 
 KSYSTEM_CURSOR KiSystemCursor = {0};
 UCHAR i8042MouPacket[4];
@@ -176,14 +176,9 @@ VOID i8042MouProcess(
 
 	else KiSystemCursor.State = NULL;
 
-	
-	WmHandleWindows();
 	i8042MouPacketReady = FALSE;
 
-	
 	NtSetCursorPos(KiSystemCursor.X, KiSystemCursor.Y);
-	
-	WmNeedsUpdate = 1;
 }
 
 VOID i8042MouUpdate(

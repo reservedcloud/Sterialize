@@ -36,7 +36,6 @@ KiUpdateTick(
 {
 	ulTick++;
 	PsScheduleThreads(reg);
-	WmUpdateScreen();
 }
 
 INT BaseFrequency = 1193180;
