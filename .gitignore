@@ -3,4 +3,5 @@
 *.iso
 *.bat
 **/.vscode/
+**/.vs/
 *.sys
