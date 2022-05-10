@@ -1,81 +1,82 @@
 #include <mm/pmm.h>
 
-void init_blocks(struct stivale2_struct *LB, UINT start_addr)
+VOID MiInitializeBlocks( struct stivale2_struct* LB, UINT start_addr )
 {
-    struct stivale2_struct_tag_memmap *a = KeTryAcquireTag(LB, STIVALE2_STRUCT_TAG_MEMMAP_ID);
- 
+    struct stivale2_struct_tag_memmap* a = KeTryAcquireTag( LB, STIVALE2_STRUCT_TAG_MEMMAP_ID );
+
     struct stivale2_struct s = {
-        .tags = (unsigned long)&a
+        .tags = ( unsigned long )&a
     };
 
-    mem_map = (_MemoryBlock *)start_addr;
-    SET_BLOCK(mem_map[current_block_id], start_addr, start_addr+BLOCK_SIZE);
-    
+    MiMemoryMap = ( KSYSTEM_MEMORY* )start_addr;
+    SET_BLOCK( MiMemoryMap[ MiCurrentBlockID ], start_addr, start_addr + BLOCK_SIZE );
+
     // Get total entries available
     UINT entries = 0;
-    for(UINT i = 0; i < a->entries; i++)
+    for ( UINT i = 0; i < a->entries; i++ )
     {
-        switch(a->memmap[i].type)
+        switch ( a->memmap[ i ].type )
         {
-            case USABLE: entries += a->memmap[i].length;break;
+            case USABLE: entries += a->memmap[ i ].length; break;
             default: break;
         }
     }
 
-    for(UINT i = 1; i < entries / BLOCK_SIZE; i++)
+    for ( UINT i = 1; i < entries / BLOCK_SIZE; i++ )
     {
         SET_BLOCK(
-            mem_map[current_block_id],
-            mem_map[current_block_id-1].naked_eaddr,
-            mem_map[current_block_id-1].naked_eaddr+BLOCK_SIZE);
+            MiMemoryMap[ MiCurrentBlockID ],
+            MiMemoryMap[ MiCurrentBlockID - 1 ].NakedEAddress,
+            MiMemoryMap[ MiCurrentBlockID - 1 ].NakedEAddress + BLOCK_SIZE );
     }
 }
- 
-_MemoryBlock access_block(UINT block)
+
+KSYSTEM_MEMORY MiAccessBlock( UINT block )
 {
     UINT index = 0;
-    _MemoryBlock current = mem_map[index];
- 
- 
-    while(current.is_used == TRUE && !(current.block_id == block) && !(index >= current_block_id))
-        current = mem_map[index++];
-   
+    KSYSTEM_MEMORY current = MiMemoryMap[ index ];
+
+
+    while ( current.IsUsed && !( current.BlockID == block ) && !( index >= MiCurrentBlockID ) )
+        current = MiMemoryMap[ index++ ];
+
     // Is the last block used? If this evaluates to false, we'll just return the current block.
-    if(current.is_used == TRUE)
+    if ( current.IsUsed )
     {
         // If the condition is false, go through each block until we find an available block.
-        while(current.is_used == TRUE && !(index >= current_block_id))
-            current = mem_map[index++];
-        if(current.is_used == FALSE) return current;
-        return mem_map[current_block_id];
+        while ( current.IsUsed && !( index >= MiCurrentBlockID ) )
+            current = MiMemoryMap[ index++ ];
+        if ( !current.IsUsed ) return current;
+        return MiMemoryMap[ MiCurrentBlockID ];
     }
     return current;
 }
 
-UINT *PMM_Allocate(UINT blocks)
+UINT* MmAllocPhyisicalMemory( UINT blocks )
 {
-    UINT addr = last_addr == 0 ? mem_map[0].naked_baddr : last_addr;
+    UINT addr = MiLastAddress == 0 ? MiMemoryMap[ 0 ].NakedBAddress : MiLastAddress;
     UINT index = 0;
     UINT total = 0;
-    _MemoryBlock b;
+    KSYSTEM_MEMORY b;
 
     /*
      * Find an available block, add the value of the end address.
      */
-    while(total < blocks)
+    while ( total < blocks )
     {
-        if(mem_map[index].is_used == TRUE)
+        if ( MiMemoryMap[ index ].IsUsed )
             index++;
-        else {
-            UINT val = mem_map[index].naked_eaddr - mem_map[index].naked_baddr;
+        else
+        {
+            UINT val = MiMemoryMap[ index ].NakedEAddress - MiMemoryMap[ index ].NakedBAddress;
             addr += val;
-            mem_map[index].is_used = TRUE;
+            MiMemoryMap[ index ].IsUsed = TRUE;
             total++;
         }
     }
 
-    last_addr = addr;
-    DbgPrintFmt("%d", addr);
+    MiLastAddress = addr;
+    DbgPrintFmt( "%d", addr );
 
-    return (UINT *)addr;
+    return ( UINT* )addr;
 }
