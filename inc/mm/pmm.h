@@ -52,4 +52,4 @@ static UINT MiLastAddress = 0;
 
 VOID MiInitializeBlocks( struct stivale2_struct* LB, UINT start_addr );
 KSYSTEM_MEMORY MiAccessBlock( UINT block );
-UINT* MmAllocPhyisicalMemory( UINT blocks );
+UINT* MmAllocPhysicalMemory( UINT blocks );
