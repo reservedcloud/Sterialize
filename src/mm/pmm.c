@@ -52,7 +52,7 @@ KSYSTEM_MEMORY MiAccessBlock( UINT block )
     return current;
 }
 
-UINT* MmAllocPhyisicalMemory( UINT blocks )
+UINT* MmAllocPhysicalMemory( UINT blocks )
 {
     UINT addr = MiLastAddress == 0 ? MiMemoryMap[ 0 ].NakedBAddress : MiLastAddress;
     UINT index = 0;
