@@ -76,7 +76,7 @@ UINT* MmAllocPhysicalMemory( UINT blocks )
     }
 
     MiLastAddress = addr;
-    DbgPrintFmt( "%d", addr );
+    DbgPrintFmt( "MmAllocPhysicalMemory: Allocated memory at: %d\n", addr );
 
     return ( UINT* )addr;
 }
